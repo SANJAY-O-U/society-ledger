@@ -1,0 +1,565 @@
+// ============================================================
+// models/user_model.dart
+// ============================================================
+class UserModel {
+  final String id;
+  final String name;
+  final String phone;
+  final String? email;
+  final String role;
+  final String? profilePhoto;
+  final bool isActive;
+  final MemberSummary? member;
+
+  UserModel({
+    required this.id,
+    required this.name,
+    required this.phone,
+    this.email,
+    required this.role,
+    this.profilePhoto,
+    required this.isActive,
+    this.member,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
+    id: json['_id'] ?? json['id'] ?? '',
+    name: json['name'] ?? '',
+    phone: json['phone'] ?? '',
+    email: json['email'],
+    role: json['role'] ?? 'member',
+    profilePhoto: json['profilePhoto'],
+    isActive: json['isActive'] ?? true,
+    member: json['member'] != null ? MemberSummary.fromJson(json['member']) : null,
+  );
+
+  bool get isAdmin => role == 'admin';
+  bool get isManagement => ['admin', 'chairman', 'secretary', 'treasurer'].contains(role);
+  
+  String get displayRole {
+    const roles = {
+      'admin': 'Administrator', 'chairman': 'Chairman',
+      'secretary': 'Secretary', 'treasurer': 'Treasurer', 'member': 'Member',
+    };
+    return roles[role] ?? role;
+  }
+}
+
+class MemberSummary {
+  final String id;
+  final String flatNumber;
+  final String wing;
+  final double monthlyMaintenance;
+  final bool isActive;
+
+  MemberSummary({
+    required this.id, required this.flatNumber, required this.wing,
+    required this.monthlyMaintenance, required this.isActive,
+  });
+
+  factory MemberSummary.fromJson(Map<String, dynamic> json) => MemberSummary(
+    id: json['_id'] ?? '',
+    flatNumber: json['flatNumber'] ?? '',
+    wing: json['wing'] ?? '',
+    monthlyMaintenance: (json['monthlyMaintenance'] ?? 0).toDouble(),
+    isActive: json['isActive'] ?? true,
+  );
+
+  String get flatIdentifier => '$wing-$flatNumber';
+}
+
+// ============================================================
+// models/member_model.dart
+// ============================================================
+class MemberModel {
+  final String id;
+  final String flatNumber;
+  final String wing;
+  final double flatArea;
+  final String ownershipType;
+  final double monthlyMaintenance;
+  final int maintenanceDueDay;
+  final bool isActive;
+  final String occupancyStatus;
+  final ParkingDetails? parking;
+  final UserModel? user;
+  final DateTime registrationDate;
+  final double agreementValue;
+  final int numberOfResidents;
+
+  MemberModel({
+    required this.id, required this.flatNumber, required this.wing,
+    required this.flatArea, required this.ownershipType,
+    required this.monthlyMaintenance, required this.maintenanceDueDay,
+    required this.isActive, required this.occupancyStatus,
+    this.parking, this.user, required this.registrationDate,
+    required this.agreementValue, required this.numberOfResidents,
+  });
+
+  factory MemberModel.fromJson(Map<String, dynamic> json) => MemberModel(
+    id: json['_id'] ?? '',
+    flatNumber: json['flatNumber'] ?? '',
+    wing: json['wing'] ?? '',
+    flatArea: (json['flatArea'] ?? 0).toDouble(),
+    ownershipType: json['ownershipType'] ?? 'owner',
+    monthlyMaintenance: (json['monthlyMaintenance'] ?? 0).toDouble(),
+    maintenanceDueDay: json['maintenanceDueDay'] ?? 10,
+    isActive: json['isActive'] ?? true,
+    occupancyStatus: json['occupancyStatus'] ?? 'occupied',
+    parking: json['parking'] != null ? ParkingDetails.fromJson(json['parking']) : null,
+    user: json['user'] is Map ? UserModel.fromJson(json['user']) : null,
+    registrationDate: json['registrationDate'] != null
+        ? DateTime.parse(json['registrationDate']) : DateTime.now(),
+    agreementValue: (json['agreementValue'] ?? 0).toDouble(),
+    numberOfResidents: json['numberOfResidents'] ?? 1,
+  );
+
+  String get flatIdentifier => '$wing-$flatNumber';
+}
+
+class ParkingDetails {
+  final bool hasParking;
+  final String? parkingNumber;
+  final String vehicleType;
+
+  ParkingDetails({required this.hasParking, this.parkingNumber, required this.vehicleType});
+
+  factory ParkingDetails.fromJson(Map<String, dynamic> json) => ParkingDetails(
+    hasParking: json['hasParking'] ?? false,
+    parkingNumber: json['parkingNumber'],
+    vehicleType: json['vehicleType'] ?? 'none',
+  );
+}
+
+// ============================================================
+// models/ledger_model.dart
+// ============================================================
+class LedgerTransaction {
+  final String id;
+  final String memberId;
+  final String type; // debit / credit
+  final String category;
+  final double amount;
+  final String description;
+  final DateTime date;
+  final int month;
+  final int year;
+  final double balance;
+  final String status;
+  final DateTime? dueDate;
+  final DateTime? paidOn;
+  final String? receiptNumber;
+  final bool lateFeeApplied;
+  final double lateFeeAmount;
+  final bool isAutoGenerated;
+
+  LedgerTransaction({
+    required this.id, required this.memberId, required this.type,
+    required this.category, required this.amount, required this.description,
+    required this.date, required this.month, required this.year,
+    required this.balance, required this.status, this.dueDate, this.paidOn,
+    this.receiptNumber, required this.lateFeeApplied, required this.lateFeeAmount,
+    required this.isAutoGenerated,
+  });
+
+  factory LedgerTransaction.fromJson(Map<String, dynamic> json) => LedgerTransaction(
+    id: json['_id'] ?? '',
+    memberId: json['member'] is String ? json['member'] : (json['member']?['_id'] ?? ''),
+    type: json['type'] ?? 'debit',
+    category: json['category'] ?? 'maintenance',
+    amount: (json['amount'] ?? 0).toDouble(),
+    description: json['description'] ?? '',
+    date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+    month: json['month'] ?? 1,
+    year: json['year'] ?? DateTime.now().year,
+    balance: (json['balance'] ?? 0).toDouble(),
+    status: json['status'] ?? 'pending',
+    dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+    paidOn: json['paidOn'] != null ? DateTime.parse(json['paidOn']) : null,
+    receiptNumber: json['receiptNumber'],
+    lateFeeApplied: json['lateFeeApplied'] ?? false,
+    lateFeeAmount: (json['lateFeeAmount'] ?? 0).toDouble(),
+    isAutoGenerated: json['isAutoGenerated'] ?? false,
+  );
+
+  bool get isCredit => type == 'credit';
+  bool get isDebit => type == 'debit';
+  bool get isOverdue => status == 'overdue';
+  bool get isPending => status == 'pending';
+  bool get isPaid => status == 'paid';
+}
+
+class LedgerSummary {
+  final double totalDebit;
+  final double totalCredit;
+  final double pendingAmount;
+  final double currentBalance;
+
+  LedgerSummary({
+    required this.totalDebit, required this.totalCredit,
+    required this.pendingAmount, required this.currentBalance,
+  });
+
+  factory LedgerSummary.fromJson(Map<String, dynamic> json) => LedgerSummary(
+    totalDebit: (json['totalDebit'] ?? 0).toDouble(),
+    totalCredit: (json['totalCredit'] ?? 0).toDouble(),
+    pendingAmount: (json['pendingAmount'] ?? 0).toDouble(),
+    currentBalance: (json['currentBalance'] ?? 0).toDouble(),
+  );
+}
+
+// ============================================================
+// models/payment_model.dart
+// ============================================================
+class PaymentModel {
+  final String id;
+  final double amount;
+  final String status;
+  final String paymentMethod;
+  final String description;
+  final int month;
+  final int year;
+  final DateTime? paidAt;
+  final String? razorpayPaymentId;
+  final MemberModel? member;
+
+  PaymentModel({
+    required this.id, required this.amount, required this.status,
+    required this.paymentMethod, required this.description,
+    required this.month, required this.year,
+    this.paidAt, this.razorpayPaymentId, this.member,
+  });
+
+  factory PaymentModel.fromJson(Map<String, dynamic> json) => PaymentModel(
+    id: json['_id'] ?? '',
+    amount: (json['amount'] ?? 0).toDouble(),
+    status: json['status'] ?? 'created',
+    paymentMethod: json['paymentMethod'] ?? 'upi',
+    description: json['description'] ?? '',
+    month: json['month'] ?? 1,
+    year: json['year'] ?? DateTime.now().year,
+    paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt']) : null,
+    razorpayPaymentId: json['razorpayPaymentId'],
+    member: json['member'] is Map ? MemberModel.fromJson(json['member']) : null,
+  );
+}
+
+// ============================================================
+// models/complaint_model.dart
+// ============================================================
+class ComplaintModel {
+  final String id;
+  final String title;
+  final String description;
+  final String category;
+  final String priority;
+  final String status;
+  final String ticketNumber;
+  final DateTime createdAt;
+  final List<ComplaintResponse> responses;
+  final List<String> images;
+  final int? rating;
+
+  ComplaintModel({
+    required this.id, required this.title, required this.description,
+    required this.category, required this.priority, required this.status,
+    required this.ticketNumber, required this.createdAt,
+    required this.responses, required this.images, this.rating,
+  });
+
+  factory ComplaintModel.fromJson(Map<String, dynamic> json) => ComplaintModel(
+    id: json['_id'] ?? '',
+    title: json['title'] ?? '',
+    description: json['description'] ?? '',
+    category: json['category'] ?? 'other',
+    priority: json['priority'] ?? 'medium',
+    status: json['status'] ?? 'open',
+    ticketNumber: json['ticketNumber'] ?? '',
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    responses: (json['responses'] as List? ?? []).map((r) => ComplaintResponse.fromJson(r)).toList(),
+    images: (json['images'] as List? ?? []).map((i) => i['url'] as String).toList(),
+    rating: json['rating'],
+  );
+
+  bool get isOpen => status == 'open';
+  bool get isResolved => status == 'resolved' || status == 'closed';
+}
+
+class ComplaintResponse {
+  final String message;
+  final DateTime timestamp;
+  final bool isInternal;
+  final String? respondedByName;
+
+  ComplaintResponse({
+    required this.message, required this.timestamp,
+    required this.isInternal, this.respondedByName,
+  });
+
+  factory ComplaintResponse.fromJson(Map<String, dynamic> json) => ComplaintResponse(
+    message: json['message'] ?? '',
+    timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
+    isInternal: json['isInternal'] ?? false,
+    respondedByName: json['respondedBy'] is Map ? json['respondedBy']['name'] : null,
+  );
+}
+
+// ============================================================
+// models/event_model.dart
+// ============================================================
+class EventModel {
+  final String id;
+  final String title;
+  final String description;
+  final String category;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String? venue;
+  final bool isVirtual;
+  final String? coverImage;
+  final int rsvpCount;
+  final String? myRsvpStatus;
+
+  EventModel({
+    required this.id, required this.title, required this.description,
+    required this.category, required this.startDate, required this.endDate,
+    this.venue, required this.isVirtual, this.coverImage,
+    required this.rsvpCount, this.myRsvpStatus,
+  });
+
+  factory EventModel.fromJson(Map<String, dynamic> json) => EventModel(
+    id: json['_id'] ?? '',
+    title: json['title'] ?? '',
+    description: json['description'] ?? '',
+    category: json['category'] ?? 'other',
+    startDate: DateTime.parse(json['startDate']),
+    endDate: DateTime.parse(json['endDate']),
+    venue: json['venue'],
+    isVirtual: json['isVirtual'] ?? false,
+    coverImage: json['coverImage'],
+    rsvpCount: (json['rsvp'] as List?)?.length ?? 0,
+    myRsvpStatus: json['myRsvpStatus'],
+  );
+}
+
+// ============================================================
+// models/expense_model.dart
+// ============================================================
+class ExpenseModel {
+  final String id;
+  final String category;
+  final String title;
+  final double amount;
+  final DateTime date;
+  final String status;
+  final String? invoiceUrl;
+  final VendorInfo? vendor;
+
+  ExpenseModel({
+    required this.id, required this.category, required this.title,
+    required this.amount, required this.date, required this.status,
+    this.invoiceUrl, this.vendor,
+  });
+
+  factory ExpenseModel.fromJson(Map<String, dynamic> json) => ExpenseModel(
+    id: json['_id'] ?? '',
+    category: json['category'] ?? 'miscellaneous',
+    title: json['title'] ?? '',
+    amount: (json['amount'] ?? 0).toDouble(),
+    date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+    status: json['status'] ?? 'pending_approval',
+    invoiceUrl: json['invoiceUrl'],
+    vendor: json['vendor'] != null ? VendorInfo.fromJson(json['vendor']) : null,
+  );
+}
+
+class VendorInfo {
+  final String? name;
+  final String? contact;
+  final String? invoiceNumber;
+
+  VendorInfo({this.name, this.contact, this.invoiceNumber});
+
+  factory VendorInfo.fromJson(Map<String, dynamic> json) => VendorInfo(
+    name: json['name'], contact: json['contact'], invoiceNumber: json['invoiceNumber'],
+  );
+}
+
+// ============================================================
+// models/inventory_model.dart
+// ============================================================
+class InventoryItem {
+  final String id;
+  final String itemName;
+  final String category;
+  final int quantity;
+  final int availableQuantity;
+  final String condition;
+  final String status;
+  final DateTime? purchaseDate;
+  final double purchasePrice;
+  final String? location;
+
+  InventoryItem({
+    required this.id, required this.itemName, required this.category,
+    required this.quantity, required this.availableQuantity,
+    required this.condition, required this.status,
+    this.purchaseDate, required this.purchasePrice, this.location,
+  });
+
+  factory InventoryItem.fromJson(Map<String, dynamic> json) => InventoryItem(
+    id: json['_id'] ?? '',
+    itemName: json['itemName'] ?? '',
+    category: json['category'] ?? 'other',
+    quantity: json['quantity'] ?? 0,
+    availableQuantity: json['availableQuantity'] ?? 0,
+    condition: json['condition'] ?? 'good',
+    status: json['status'] ?? 'available',
+    purchaseDate: json['purchaseDate'] != null ? DateTime.parse(json['purchaseDate']) : null,
+    purchasePrice: (json['purchasePrice'] ?? 0).toDouble(),
+    location: json['location'],
+  );
+}
+
+// ============================================================
+// models/document_model.dart
+// ============================================================
+class DocumentModel {
+  final String id;
+  final String title;
+  final String? description;
+  final String category;
+  final String fileUrl;
+  final String? fileName;
+  final int? fileSize;
+  final String? mimeType;
+  final DateTime createdAt;
+  final int downloadCount;
+
+  DocumentModel({
+    required this.id, required this.title, this.description,
+    required this.category, required this.fileUrl, this.fileName,
+    this.fileSize, this.mimeType, required this.createdAt,
+    required this.downloadCount,
+  });
+
+  factory DocumentModel.fromJson(Map<String, dynamic> json) => DocumentModel(
+    id: json['_id'] ?? '',
+    title: json['title'] ?? '',
+    description: json['description'],
+    category: json['category'] ?? 'other',
+    fileUrl: json['fileUrl'] ?? '',
+    fileName: json['fileName'],
+    fileSize: json['fileSize'],
+    mimeType: json['mimeType'],
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    downloadCount: json['downloadCount'] ?? 0,
+  );
+
+  bool get isPdf => mimeType == 'application/pdf' || fileUrl.endsWith('.pdf');
+}
+
+// ============================================================
+// models/notification_model.dart
+// ============================================================
+class NotificationModel {
+  final String id;
+  final String title;
+  final String body;
+  final String type;
+  final DateTime createdAt;
+  final bool isRead;
+
+  NotificationModel({
+    required this.id, required this.title, required this.body,
+    required this.type, required this.createdAt, required this.isRead,
+  });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json, String userId) => NotificationModel(
+    id: json['_id'] ?? '',
+    title: json['title'] ?? '',
+    body: json['body'] ?? '',
+    type: json['type'] ?? 'general',
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    isRead: (json['readBy'] as List? ?? []).any((r) => r['user'] == userId),
+  );
+}
+
+// ============================================================
+// models/dashboard_model.dart
+// ============================================================
+class AdminDashboardData {
+  final MemberStats members;
+  final FinanceStats finance;
+  final ComplaintStats complaints;
+  final List<EventModel> upcomingEvents;
+  final List<PaymentModel> recentPayments;
+  final List<MonthlyChartPoint> collectionTrend;
+  final List<ExpenseCategoryPoint> expenseByCategory;
+
+  AdminDashboardData({
+    required this.members, required this.finance, required this.complaints,
+    required this.upcomingEvents, required this.recentPayments,
+    required this.collectionTrend, required this.expenseByCategory,
+  });
+
+  factory AdminDashboardData.fromJson(Map<String, dynamic> json) {
+    final d = json['data'] ?? json;
+    return AdminDashboardData(
+      members: MemberStats.fromJson(d['members'] ?? {}),
+      finance: FinanceStats.fromJson(d['finance'] ?? {}),
+      complaints: ComplaintStats.fromJson(d['complaints'] ?? {}),
+      upcomingEvents: (d['upcomingEvents'] as List? ?? []).map((e) => EventModel.fromJson(e)).toList(),
+      recentPayments: (d['recentPayments'] as List? ?? []).map((p) => PaymentModel.fromJson(p)).toList(),
+      collectionTrend: (d['charts']?['collectionTrend'] as List? ?? []).map((c) => MonthlyChartPoint.fromJson(c)).toList(),
+      expenseByCategory: (d['charts']?['expenseByCategory'] as List? ?? []).map((e) => ExpenseCategoryPoint.fromJson(e)).toList(),
+    );
+  }
+}
+
+class MemberStats {
+  final int total, active, inactive;
+  MemberStats({required this.total, required this.active, required this.inactive});
+  factory MemberStats.fromJson(Map<String, dynamic> json) => MemberStats(
+    total: json['total'] ?? 0, active: json['active'] ?? 0, inactive: json['inactive'] ?? 0,
+  );
+}
+
+class FinanceStats {
+  final double monthlyCollection, totalPendingDues, monthlyExpenses, netBalance;
+  FinanceStats({required this.monthlyCollection, required this.totalPendingDues, required this.monthlyExpenses, required this.netBalance});
+  factory FinanceStats.fromJson(Map<String, dynamic> json) => FinanceStats(
+    monthlyCollection: (json['monthlyCollection'] ?? 0).toDouble(),
+    totalPendingDues: (json['totalPendingDues'] ?? 0).toDouble(),
+    monthlyExpenses: (json['monthlyExpenses'] ?? 0).toDouble(),
+    netBalance: (json['netBalance'] ?? 0).toDouble(),
+  );
+}
+
+class ComplaintStats {
+  final int open, inProgress;
+  ComplaintStats({required this.open, required this.inProgress});
+  factory ComplaintStats.fromJson(Map<String, dynamic> json) => ComplaintStats(
+    open: json['open'] ?? 0, inProgress: json['inProgress'] ?? 0,
+  );
+}
+
+class MonthlyChartPoint {
+  final int month, year;
+  final double total;
+  MonthlyChartPoint({required this.month, required this.year, required this.total});
+  factory MonthlyChartPoint.fromJson(Map<String, dynamic> json) => MonthlyChartPoint(
+    month: json['_id']?['month'] ?? 0,
+    year: json['_id']?['year'] ?? 0,
+    total: (json['total'] ?? 0).toDouble(),
+  );
+}
+
+class ExpenseCategoryPoint {
+  final String category;
+  final double total;
+  ExpenseCategoryPoint({required this.category, required this.total});
+  factory ExpenseCategoryPoint.fromJson(Map<String, dynamic> json) => ExpenseCategoryPoint(
+    category: json['_id'] ?? '', total: (json['total'] ?? 0).toDouble(),
+  );
+}

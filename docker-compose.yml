@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # ─── MongoDB ──────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: society_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: society_ledger
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - society_net
+
+  # ─── Backend API ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: society_api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/society_ledger?authSource=admin
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    depends_on:
+      - mongodb
+    networks:
+      - society_net
+
+volumes:
+  mongo_data:
+
+networks:
+  society_net:
+    driver: bridge
