@@ -240,7 +240,7 @@ class PaymentModel {
     year: json['year'] ?? DateTime.now().year,
     paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt']) : null,
     razorpayPaymentId: json['razorpayPaymentId'],
-    member: json['member'] is Map ? MemberModel.fromJson(json['member']) : null,
+    member: (json['member'] is Map) ? MemberModel.fromJson(json['member'] as Map<String, dynamic>) : null,
   );
 }
 
@@ -277,7 +277,7 @@ class ComplaintModel {
     ticketNumber: json['ticketNumber'] ?? '',
     createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
     responses: (json['responses'] as List? ?? []).map((r) => ComplaintResponse.fromJson(r)).toList(),
-    images: (json['images'] as List? ?? []).map((i) => i['url'] as String).toList(),
+    images: (json['images'] as List? ?? []).map((i) => (i['url'] ?? '') as String).where((s) => s.isNotEmpty).toList(),
     rating: json['rating'],
   );
 
@@ -332,8 +332,8 @@ class EventModel {
     title: json['title'] ?? '',
     description: json['description'] ?? '',
     category: json['category'] ?? 'other',
-    startDate: DateTime.parse(json['startDate']),
-    endDate: DateTime.parse(json['endDate']),
+    startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : DateTime.now(),
+    endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : DateTime.now().add(const Duration(hours: 2)),
     venue: json['venue'],
     isVirtual: json['isVirtual'] ?? false,
     coverImage: json['coverImage'],

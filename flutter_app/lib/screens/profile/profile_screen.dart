@@ -3,6 +3,7 @@
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../config/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
@@ -514,16 +515,20 @@ class ProfileScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  _ProfileMenuItem(icon: Icons.receipt_long_outlined, label: 'Transaction History', onTap: () {}),
-                  _ProfileMenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
-                  _ProfileMenuItem(icon: Icons.security_outlined, label: 'Change Password', onTap: () {}),
+                  _ProfileMenuItem(icon: Icons.receipt_long_outlined, label: 'Transaction History', onTap: () => context.push('/payments/history')),
+                  _ProfileMenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notifications coming soon'), behavior: SnackBarBehavior.floating),
+                    );
+                  }),
+                  _ProfileMenuItem(icon: Icons.security_outlined, label: 'Change Password', onTap: () => _showChangePasswordDialog(context, ref)),
                   _ProfileMenuItem(icon: Icons.dark_mode_outlined, label: 'Dark Mode', onTap: () {
                     final themeMode = ref.read(themeModeProvider);
                     ref.read(themeModeProvider.notifier).state =
                         themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
                   }),
                   if (user.isManagement)
-                    _ProfileMenuItem(icon: Icons.admin_panel_settings_outlined, label: 'Admin Panel', color: AppTheme.primary, onTap: () {}),
+                    _ProfileMenuItem(icon: Icons.admin_panel_settings_outlined, label: 'Admin Panel', color: AppTheme.primary, onTap: () => context.push('/admin')),
                   _ProfileMenuItem(
                     icon: Icons.logout_rounded,
                     label: 'Logout',
@@ -543,9 +548,10 @@ class ProfileScreen extends ConsumerWidget {
                           ],
                         ),
                       );
-                      if (confirm == true) {
+                     if (confirm == true) {
                         await ref.read(authNotifierProvider.notifier).logout();
-                      }
+                        if (context.mounted) context.go('/auth/login');
+                     }
                     },
                   ),
                 ],
@@ -584,6 +590,71 @@ class _ProfileMenuItem extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
+  final currentCtrl = TextEditingController();
+  final newCtrl = TextEditingController();
+  bool loading = false;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: const Text('Change Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Current Password'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'New Password'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: loading ? null : () async {
+              if (newCtrl.text.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password must be at least 6 characters')),
+                );
+                return;
+              }
+              setState(() => loading = true);
+              try {
+                final dio = ref.read(dioProvider);
+                await dio.safePut('/auth/change-password', data: {
+                  'currentPassword': currentCtrl.text,
+                  'newPassword': newCtrl.text,
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password changed successfully'), backgroundColor: AppTheme.success),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+                );
+              } finally {
+                setState(() => loading = false);
+              }
+            },
+            child: loading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Update', style: TextStyle(color: AppTheme.primary)),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ─── Placeholder screens ──────────────────────────────────────────────────────

@@ -39,7 +39,10 @@ class _LedgerScreenState extends ConsumerState<LedgerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_memberId == null) {
+    final user = ref.read(authNotifierProvider).valueOrNull;
+    final isManagement = user?.isManagement ?? false;
+
+    if (_memberId == null && !isManagement) {
       return Scaffold(
         appBar: AppBar(title: const Text('Ledger')),
         body: const EmptyState(
@@ -48,6 +51,11 @@ class _LedgerScreenState extends ConsumerState<LedgerScreen> {
           subtitle: 'Your account is not linked to a member profile yet. Please contact the admin.',
         ),
       );
+    }
+
+    // Admin/management with no personal member — show all pending dues
+    if (_memberId == null && isManagement) {
+      return const _AdminLedgerView();
     }
 
     final ledgerAsync = ref.watch(ledgerProvider(_params));
@@ -344,6 +352,75 @@ class _FilterSheetState extends State<_FilterSheet> {
           AppButton(label: 'Apply Filter', onPressed: () => widget.onApply(_month, _year)),
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+}
+
+// Admin ledger view — shows all pending dues across society
+class _AdminLedgerView extends ConsumerWidget {
+  const _AdminLedgerView();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingAsync = ref.watch(pendingDuesProvider);
+    return Scaffold(
+      backgroundColor: AppTheme.surfaceLight,
+      appBar: AppBar(title: const Text('Society Ledger — Pending Dues')),
+      body: pendingAsync.when(
+        loading: () => const Padding(padding: EdgeInsets.all(16), child: ShimmerLoader()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (dues) => dues.isEmpty
+            ? const EmptyState(
+                icon: Icons.check_circle_outline,
+                title: 'All Clear!',
+                subtitle: 'No pending dues across the society.',
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: dues.length,
+                itemBuilder: (_, i) {
+                  final d = dues[i];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.divider),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${d['wing'] ?? ''}-${d['flatNumber'] ?? ''}',
+                            style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(d['name'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              Text(d['phone'] ?? '', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          formatCurrency((d['totalPending'] ?? 0).toDouble()),
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.error, fontSize: 15),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }

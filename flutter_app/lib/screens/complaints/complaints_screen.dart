@@ -72,8 +72,7 @@ class _ComplaintsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final params = status != null ? {'status': status} : <String, dynamic>{};
-    final complaintsAsync = ref.watch(complaintsProvider(params));
+    final complaintsAsync = ref.watch(complaintsProvider(status ?? ''));
 
     return complaintsAsync.when(
       loading: () => const Padding(padding: EdgeInsets.all(16), child: ShimmerLoader()),
@@ -85,7 +84,7 @@ class _ComplaintsList extends ConsumerWidget {
               subtitle: 'No complaints found in this category',
             )
           : RefreshIndicator(
-              onRefresh: () async => ref.refresh(complaintsProvider(params)),
+              onRefresh: () async => ref.refresh(complaintsProvider(status ?? '')),
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: complaints.length,
@@ -542,7 +541,7 @@ class _CreateComplaintScreenState extends ConsumerState<CreateComplaintScreen> {
       });
 
       await dio.post('/complaints', data: formData);
-      ref.refresh(complaintsProvider(const {}));
+      ref.refresh(complaintsProvider(''));
       AppSnackbar.showSuccess(context, 'Complaint submitted successfully');
       context.pop();
     } catch (e) {

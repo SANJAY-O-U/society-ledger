@@ -54,7 +54,7 @@ class _AdminDashboard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('Good ${_greeting()}, ${user?.name.split(' ').first}! 👋',
+                    Text('Good ${_greeting()}, ${user?.name?.split(' ').first ?? 'User'}! 👋',
                         style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 4),
                     Text(user?.displayRole ?? '', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
@@ -251,7 +251,7 @@ class _MemberDashboard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text('Hi, ${user?.name.split(' ').first}! 👋',
+                      Text('Hi, ${user?.name?.split(' ').first ?? 'User'}! 👋',
                           style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 4),
                       Text('Flat ${data['data']?['member']?['wing']}-${data['data']?['member']?['flatNumber']}',

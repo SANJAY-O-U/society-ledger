@@ -50,7 +50,7 @@ exports.getAdminDashboard = asyncHandler(async (req, res) => {
     Event.find({
       startDate: { $gte: new Date(), $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
       isPublished: true,
-    }).sort({ startDate: 1 }).limit(5).select('title startDate venue category'),
+    }).sort({ startDate: 1 }).limit(5).select('title startDate endDate venue category description'),
 
     // Inventory low stock
     Inventory.aggregate([

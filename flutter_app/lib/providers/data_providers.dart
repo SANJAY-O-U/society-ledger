@@ -71,9 +71,10 @@ final paymentStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((r
 });
 
 // ─── Complaints ────────────────────────────────────────────────────────────────
-final complaintsProvider = FutureProvider.autoDispose.family<List<ComplaintModel>, Map<String, dynamic>>(
-  (ref, params) async {
+final complaintsProvider = FutureProvider.autoDispose.family<List<ComplaintModel>, String>(
+  (ref, statusFilter) async {
     final dio = ref.watch(dioProvider);
+    final params = statusFilter.isNotEmpty ? {'status': statusFilter} : <String, dynamic>{};
     final res = await dio.safeGet('/complaints', params: params);
     final list = res['data'] as List? ?? [];
     return list.map((c) => ComplaintModel.fromJson(c)).toList();

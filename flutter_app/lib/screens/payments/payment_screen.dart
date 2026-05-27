@@ -100,6 +100,18 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.read(authNotifierProvider).valueOrNull;
+    final isManagement = user?.isManagement ?? false;
+
+    // Admin has no member profile — show payment history / offline recording
+    if (isManagement && user?.member == null) {
+      return Scaffold(
+        backgroundColor: AppTheme.surfaceLight,
+        appBar: AppBar(title: const Text('Payments')),
+        body: const PaymentHistoryScreen(),
+      );
+    }
+
     final dashAsync = ref.watch(memberDashboardProvider);
 
     return Scaffold(

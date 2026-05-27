@@ -118,6 +118,7 @@ class StatCard extends StatelessWidget {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               mainAxisSize: MainAxisSize.min,   // ADD THIS
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
