@@ -221,8 +221,10 @@ class _ComplaintDetailScreenState extends ConsumerState<ComplaintDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final complaintAsync = ref.watch(complaintDetailProvider(widget.id));
-    final user = ref.watch(authNotifierProvider).valueOrNull;
-    final isManagement = user?.isManagement ?? false;
+    // FIX: select() - only rebuild when management status changes
+    final isManagement = ref.watch(
+      authNotifierProvider.select((s) => s.valueOrNull?.isManagement ?? false),
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceLight,

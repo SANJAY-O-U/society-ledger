@@ -374,7 +374,7 @@ class PaymentHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final paymentsAsync = ref.watch(paymentsProvider(const {}));
+    final paymentsAsync = ref.watch(paymentsProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Payment History')),
       body: paymentsAsync.when(

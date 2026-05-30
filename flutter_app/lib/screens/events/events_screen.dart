@@ -98,7 +98,7 @@ class _EventsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final params = upcomingOnly ? {'upcoming': 'true'} : <String, dynamic>{};
-    final eventsAsync = ref.watch(eventsProvider(params));
+    final eventsAsync = ref.watch(eventsProvider);
 
     return eventsAsync.when(
       loading: () => const Padding(padding: EdgeInsets.all(16), child: ShimmerLoader()),
@@ -110,7 +110,7 @@ class _EventsList extends ConsumerWidget {
               subtitle: 'No events scheduled at this time',
             )
           : RefreshIndicator(
-              onRefresh: () async => ref.refresh(eventsProvider(params)),
+              onRefresh: () async => ref.refresh(eventsProvider),
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: events.length,
@@ -244,7 +244,7 @@ class _EventCard extends StatelessWidget {
 class _EventCalendar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventsAsync = ref.watch(eventsProvider(const {}));
+    final eventsAsync = ref.watch(eventsProvider);
 
     return Container(
       color: Colors.white,
@@ -432,7 +432,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
         'venue': _venueCtrl.text.trim(),
         'isPublished': true,
       });
-      ref.refresh(eventsProvider(const {}));
+      ref.refresh(eventsProvider);
       Navigator.pop(context);
       AppSnackbar.showSuccess(context, 'Event created!');
     } catch (e) {

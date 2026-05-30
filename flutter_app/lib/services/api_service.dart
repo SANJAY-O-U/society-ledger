@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/storage_service.dart';
 
 const String baseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api');
-
+final _inflightRequests = <String, Future<Map<String, dynamic>>>{};
 final dioProvider = Provider<Dio>((ref) {
+  ref.keepAlive(); // never recreate Dio
   final dio = Dio(BaseOptions(
     baseUrl: baseUrl,
     connectTimeout: const Duration(seconds: 15),
@@ -66,6 +67,18 @@ class ApiException implements Exception {
 // ─── Base API helper ──────────────────────────────────────────────────────────
 extension DioHelper on Dio {
   Future<Map<String, dynamic>> safeGet(String path, {Map<String, dynamic>? params}) async {
+  // Deduplicate concurrent identical requests
+  final paramStr = params?.entries
+      .where((e) => e.value != null)
+      .map((e) => '${e.key}=${e.value}')
+      .toList()?..sort();
+  final dedupKey = '$path?${paramStr?.join('&') ?? ''}';
+
+  if (_inflightRequests.containsKey(dedupKey)) {
+    return _inflightRequests[dedupKey]!;
+  }
+
+  final future = () async {
     try {
       final res = await get(path, queryParameters: params);
       return res.data as Map<String, dynamic>;
@@ -75,7 +88,15 @@ extension DioHelper on Dio {
         statusCode: e.response?.statusCode,
       );
     }
+  }();
+
+  _inflightRequests[dedupKey] = future;
+  try {
+    return await future;
+  } finally {
+    _inflightRequests.remove(dedupKey);
   }
+}
 
   Future<Map<String, dynamic>> safePost(String path, {dynamic data}) async {
     try {

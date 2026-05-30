@@ -106,7 +106,11 @@ class StatCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+  constraints: const BoxConstraints(
+    minHeight: 125,
+  ),
+  height: 135,
+  padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -114,11 +118,11 @@ class StatCard extends StatelessWidget {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-               mainAxisSize: MainAxisSize.min,   // ADD THIS
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -128,10 +132,10 @@ class StatCard extends StatelessWidget {
                 if (onTap != null) const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textTertiary),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary, height: 1)),
             const SizedBox(height: 4),
-            Text(title, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+            Text(title, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
             if (subtitle != null) ...[
               const SizedBox(height: 2),
               Text(subtitle!, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),

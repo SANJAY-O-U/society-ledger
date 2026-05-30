@@ -3,29 +3,29 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
-final adminDashboardProvider = FutureProvider.autoDispose<AdminDashboardData>((ref) async {
-  final dio = ref.watch(dioProvider);
+final adminDashboardProvider = FutureProvider<AdminDashboardData>((ref) async {
+  final dio = ref.read(dioProvider);
   final res = await dio.safeGet('/dashboard/admin');
   return AdminDashboardData.fromJson(res);
 });
 
-final memberDashboardProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final dio = ref.watch(dioProvider);
+final memberDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final dio = ref.read(dioProvider);
   return await dio.safeGet('/dashboard/member');
 });
 
 // ─── Members ───────────────────────────────────────────────────────────────────
-final membersListProvider = FutureProvider.autoDispose.family<List<MemberModel>, Map<String, dynamic>>(
-  (ref, params) async {
-    final dio = ref.watch(dioProvider);
-    final res = await dio.safeGet('/members', params: params);
+final membersListProvider = FutureProvider<List<MemberModel>>(
+  (ref) async {
+    final dio = ref.read(dioProvider);
+    final res = await dio.safeGet('/members');
     final list = res['data'] as List? ?? [];
     return list.map((m) => MemberModel.fromJson(m)).toList();
   },
 );
 
 final memberDetailProvider = FutureProvider.autoDispose.family<MemberModel, String>((ref, id) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   final res = await dio.safeGet('/members/$id');
   return MemberModel.fromJson(res['data']);
 });
@@ -38,9 +38,9 @@ class LedgerParams {
   LedgerParams({required this.memberId, this.month, this.year, this.page = 1});
 }
 
-final ledgerProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, LedgerParams>(
+final ledgerProvider = FutureProvider.family<Map<String, dynamic>, LedgerParams>(
   (ref, params) async {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     return await dio.safeGet('/ledger/${params.memberId}', params: {
       'page': params.page,
       if (params.month != null) 'month': params.month,
@@ -49,31 +49,31 @@ final ledgerProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, L
   },
 );
 
-final pendingDuesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final dio = ref.watch(dioProvider);
+final pendingDuesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final dio = ref.read(dioProvider);
   final res = await dio.safeGet('/ledger/pending-dues');
   return (res['data'] as List? ?? []).cast<Map<String, dynamic>>();
 });
 
 // ─── Payments ──────────────────────────────────────────────────────────────────
-final paymentsProvider = FutureProvider.autoDispose.family<List<PaymentModel>, Map<String, dynamic>>(
-  (ref, params) async {
-    final dio = ref.watch(dioProvider);
-    final res = await dio.safeGet('/payments', params: params);
+final paymentsProvider = FutureProvider<List<PaymentModel>>(
+  (ref) async {
+    final dio = ref.read(dioProvider);
+    final res = await dio.safeGet('/payments');
     final list = res['data'] as List? ?? [];
     return list.map((p) => PaymentModel.fromJson(p)).toList();
   },
 );
 
-final paymentStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final dio = ref.watch(dioProvider);
+final paymentStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final dio = ref.read(dioProvider);
   return await dio.safeGet('/payments/stats');
 });
 
 // ─── Complaints ────────────────────────────────────────────────────────────────
-final complaintsProvider = FutureProvider.autoDispose.family<List<ComplaintModel>, String>(
+final complaintsProvider = FutureProvider.family<List<ComplaintModel>, String>(
   (ref, statusFilter) async {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     final params = statusFilter.isNotEmpty ? {'status': statusFilter} : <String, dynamic>{};
     final res = await dio.safeGet('/complaints', params: params);
     final list = res['data'] as List? ?? [];
@@ -82,52 +82,52 @@ final complaintsProvider = FutureProvider.autoDispose.family<List<ComplaintModel
 );
 
 final complaintDetailProvider = FutureProvider.autoDispose.family<ComplaintModel, String>((ref, id) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   final res = await dio.safeGet('/complaints/$id');
   return ComplaintModel.fromJson(res['data']);
 });
 
 // ─── Events ────────────────────────────────────────────────────────────────────
-final eventsProvider = FutureProvider.autoDispose.family<List<EventModel>, Map<String, dynamic>>(
-  (ref, params) async {
-    final dio = ref.watch(dioProvider);
-    final res = await dio.safeGet('/events', params: params);
+final eventsProvider = FutureProvider<List<EventModel>>(
+  (ref) async {
+    final dio = ref.read(dioProvider);
+    final res = await dio.safeGet('/events');
     final list = res['data'] as List? ?? [];
     return list.map((e) => EventModel.fromJson(e)).toList();
   },
 );
 
 final eventDetailProvider = FutureProvider.autoDispose.family<EventModel, String>((ref, id) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   final res = await dio.safeGet('/events/$id');
   return EventModel.fromJson(res['data']);
 });
 
 // ─── Expenses ──────────────────────────────────────────────────────────────────
-final expensesProvider = FutureProvider.autoDispose.family<List<ExpenseModel>, Map<String, dynamic>>(
-  (ref, params) async {
-    final dio = ref.watch(dioProvider);
-    final res = await dio.safeGet('/expenses', params: params);
+final expensesProvider = FutureProvider<List<ExpenseModel>>(
+  (ref) async {
+    final dio = ref.read(dioProvider);
+    final res = await dio.safeGet('/expenses');
     final list = res['data'] as List? ?? [];
     return list.map((e) => ExpenseModel.fromJson(e)).toList();
   },
 );
 
 // ─── Inventory ─────────────────────────────────────────────────────────────────
-final inventoryProvider = FutureProvider.autoDispose.family<List<InventoryItem>, Map<String, dynamic>>(
-  (ref, params) async {
-    final dio = ref.watch(dioProvider);
-    final res = await dio.safeGet('/inventory', params: params);
+final inventoryProvider = FutureProvider<List<InventoryItem>>(
+  (ref) async {
+    final dio = ref.read(dioProvider);
+    final res = await dio.safeGet('/inventory');
     final list = res['data'] as List? ?? [];
     return list.map((i) => InventoryItem.fromJson(i)).toList();
   },
 );
 
 // ─── Documents ─────────────────────────────────────────────────────────────────
-final documentsProvider = FutureProvider.autoDispose.family<List<DocumentModel>, Map<String, dynamic>>(
-  (ref, params) async {
-    final dio = ref.watch(dioProvider);
-    final res = await dio.safeGet('/documents', params: params);
+final documentsProvider = FutureProvider<List<DocumentModel>>(
+  (ref) async {
+    final dio = ref.read(dioProvider);
+    final res = await dio.safeGet('/documents');
     final list = res['data'] as List? ?? [];
     return list.map((d) => DocumentModel.fromJson(d)).toList();
   },
@@ -135,7 +135,7 @@ final documentsProvider = FutureProvider.autoDispose.family<List<DocumentModel>,
 
 // ─── Notifications ─────────────────────────────────────────────────────────────
 final notificationsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   return await dio.safeGet('/notifications');
 });
 

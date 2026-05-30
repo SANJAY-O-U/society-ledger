@@ -253,7 +253,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
       if (_search.isNotEmpty) 'search': _search,
       if (_wing != null) 'wing': _wing,
     };
-    final membersAsync = ref.watch(membersListProvider(params));
+    final membersAsync = ref.watch(membersListProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceLight,
@@ -282,7 +282,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
               data: (members) => members.isEmpty
                   ? const EmptyState(icon: Icons.people_outline, title: 'No Members', subtitle: 'No members found')
                   : RefreshIndicator(
-                      onRefresh: () async => ref.refresh(membersListProvider(params)),
+                      onRefresh: () async => ref.refresh(membersListProvider),
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: members.length,
@@ -426,7 +426,7 @@ class ExpensesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expensesAsync = ref.watch(expensesProvider(const {}));
+    final expensesAsync = ref.watch(expensesProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceLight,
@@ -511,7 +511,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         'category': _category,
         'description': _descCtrl.text.trim(),
       });
-      ref.refresh(expensesProvider(const {}));
+      ref.refresh(expensesProvider);
       context.pop();
       AppSnackbar.showSuccess(context, 'Expense recorded');
     } catch (e) {

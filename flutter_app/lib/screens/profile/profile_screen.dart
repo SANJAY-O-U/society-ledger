@@ -32,7 +32,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inventoryAsync = ref.watch(inventoryProvider(_params));
+    final inventoryAsync = ref.watch(inventoryProvider);
     final user = ref.watch(authNotifierProvider).valueOrNull;
 
     return Scaffold(
@@ -87,7 +87,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               data: (items) => items.isEmpty
                   ? const EmptyState(icon: Icons.inventory_2_outlined, title: 'No Items', subtitle: 'No inventory items found')
                   : RefreshIndicator(
-                      onRefresh: () async => ref.refresh(inventoryProvider(_params)),
+                      onRefresh: () async => ref.refresh(inventoryProvider),
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: items.length,
@@ -232,7 +232,7 @@ class _AddInventorySheetState extends ConsumerState<_AddInventorySheet> {
         'quantity': int.parse(_qtyCtrl.text),
         'location': _locationCtrl.text.trim(),
       });
-      ref.refresh(inventoryProvider(const {}));
+      ref.refresh(inventoryProvider);
       Navigator.pop(context);
       AppSnackbar.showSuccess(context, 'Item added to inventory');
     } catch (e) {
@@ -313,7 +313,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authNotifierProvider).valueOrNull;
     final params = _category != null ? {'category': _category} : <String, dynamic>{};
-    final docsAsync = ref.watch(documentsProvider(params));
+    final docsAsync = ref.watch(documentsProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceLight,

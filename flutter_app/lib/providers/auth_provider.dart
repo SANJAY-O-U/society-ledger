@@ -23,18 +23,17 @@ final currentUserProvider = StateProvider<UserModel?>((ref) {
 class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   final Dio _dio;
 
-  AuthNotifier(this._dio) : super(const AsyncValue.loading()) {
-    _loadFromStorage();
-  }
+AuthNotifier(this._dio) : super(const AsyncValue.data(null)) {
+  _loadFromStorage();
+}
 
-  void _loadFromStorage() {
-    final userData = StorageService.getUser();
-    if (userData != null) {
-      state = AsyncValue.data(UserModel.fromJson(userData));
-    } else {
-      state = const AsyncValue.data(null);
-    }
+void _loadFromStorage() {
+  final userData = StorageService.getUser();
+  if (userData != null) {
+    state = AsyncValue.data(UserModel.fromJson(userData));
   }
+  // else: already data(null), no change needed
+}
 
   Future<void> sendOTP(String phone) async {
     await _dio.safePost('/auth/send-otp', data: {'phone': phone});

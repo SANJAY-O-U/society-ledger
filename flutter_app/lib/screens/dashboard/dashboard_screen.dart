@@ -13,8 +13,11 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authNotifierProvider).valueOrNull;
-    final isManagement = user?.isManagement ?? false;
+    // FIX: select() only rebuilds when isManagement changes (login/role change),
+    // not on every auth state emission.
+    final isManagement = ref.watch(
+      authNotifierProvider.select((s) => s.valueOrNull?.isManagement ?? false),
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceLight,
@@ -34,7 +37,15 @@ class _AdminDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashAsync = ref.watch(adminDashboardProvider);
-    final user = ref.watch(authNotifierProvider).valueOrNull;
+    // FIX: use .select() to only rebuild when name/role changes,
+    // not on any auth state change. Previously watched full authNotifierProvider
+    // which rebuilt the entire dashboard on any auth event.
+    final userName = ref.watch(
+      authNotifierProvider.select((s) => s.valueOrNull?.name),
+    );
+    final userRole = ref.watch(
+      authNotifierProvider.select((s) => s.valueOrNull?.displayRole),
+    );
 
     return RefreshIndicator(
       onRefresh: () async => ref.refresh(adminDashboardProvider),
@@ -54,10 +65,10 @@ class _AdminDashboard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('Good ${_greeting()}, ${user?.name?.split(' ').first ?? 'User'}! 👋',
+                    Text('Good ${_greeting()}, ${userName?.split(' ').first ?? 'User'}! 👋',
                         style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 4),
-                    Text(user?.displayRole ?? '', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+                    Text(userRole ?? '', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
                   ],
                 ),
               ),
@@ -90,7 +101,7 @@ class _AdminDashboard extends ConsumerWidget {
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1.4,
+                    childAspectRatio: 1.1,
                     children: [
                       StatCard(
                         title: 'Monthly Collection',
@@ -224,7 +235,10 @@ class _MemberDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashAsync = ref.watch(memberDashboardProvider);
-    final user = ref.watch(authNotifierProvider).valueOrNull;
+    // FIX: select() so only name changes trigger rebuild, not full auth state
+    final userName = ref.watch(
+      authNotifierProvider.select((s) => s.valueOrNull?.name),
+    );
 
     return RefreshIndicator(
       onRefresh: () async => ref.refresh(memberDashboardProvider),
@@ -251,7 +265,7 @@ class _MemberDashboard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text('Hi, ${user?.name?.split(' ').first ?? 'User'}! 👋',
+                      Text('Hi, ${userName?.split(' ').first ?? 'User'}! 👋',
                           style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 4),
                       Text('Flat ${data['data']?['member']?['wing']}-${data['data']?['member']?['flatNumber']}',

@@ -21,7 +21,7 @@ class SocietyLedgerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+    final router = ref.read(routerProvider); // ref.read — router never needs to rebuild
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(

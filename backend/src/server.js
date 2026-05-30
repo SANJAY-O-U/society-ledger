@@ -37,13 +37,14 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 200 : 1000,
   message: { success: false, message: 'Too many requests, please try again later.' },
+  skip: (req) => req.ip === '::1' || req.ip === '127.0.0.1', // skip localhost
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 20 : 100,
   message: { success: false, message: 'Too many auth attempts, please try again later.' },
 });
 

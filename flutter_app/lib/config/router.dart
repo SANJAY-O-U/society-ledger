@@ -30,27 +30,47 @@ import '../widgets/main_shell.dart';
 
 class _RouterNotifier extends ChangeNotifier {
   final Ref _ref;
+  bool _previousIsLoggedIn = false;
+
   _RouterNotifier(this._ref) {
-    _ref.listen<AsyncValue<UserModel?>>(authNotifierProvider, (_, __) {
-      notifyListeners();
+    _previousIsLoggedIn = _ref.read(authNotifierProvider).valueOrNull != null;
+
+    _ref.listen<AsyncValue<UserModel?>>(authNotifierProvider, (prev, next) {
+      final wasLoading = prev?.isLoading ?? false;
+      final nextLoggedIn = next.valueOrNull != null;
+
+      if (next.isLoading) return;
+      if (nextLoggedIn == _previousIsLoggedIn && !wasLoading) return;
+
+      _previousIsLoggedIn = nextLoggedIn;
+      notifyListeners(); // fires exactly ONCE per actual login/logout
     });
   }
+
   bool get isLoggedIn => _ref.read(authNotifierProvider).valueOrNull != null;
 }
 
 final _routerNotifierProvider = Provider<_RouterNotifier>((ref) {
+  ref.keepAlive(); // never dispose
   return _RouterNotifier(ref);
 });
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final notifier = ref.watch(_routerNotifierProvider);
+  ref.keepAlive(); // GoRouter instance created ONCE, never recreated
+
+  final notifier = ref.read(_routerNotifierProvider); // ref.READ not watch
+
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: notifier,
     redirect: (context, state) {
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isLoading) return null; // don't redirect while loading
+
       final isLoggedIn = notifier.isLoggedIn;
       final isSplash = state.matchedLocation == '/splash';
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
+
       if (isSplash) return null;
       if (!isLoggedIn && !isAuthRoute) return '/auth/login';
       if (isLoggedIn && isAuthRoute) return '/home';
