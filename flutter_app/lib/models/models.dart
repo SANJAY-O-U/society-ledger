@@ -30,7 +30,9 @@ class UserModel {
     role: json['role'] ?? 'member',
     profilePhoto: json['profilePhoto'],
     isActive: json['isActive'] ?? true,
-    member: json['member'] != null ? MemberSummary.fromJson(json['member']) : null,
+   member: (json['member'] is Map<String, dynamic>)
+    ? MemberSummary.fromJson(json['member'] as Map<String, dynamic>)
+    : null,
   );
 
   bool get isAdmin => role == 'admin';

@@ -27,27 +27,40 @@ import '../screens/admin/add_member_screen.dart';
 import '../screens/admin/expenses_screen.dart';
 import '../screens/admin/add_expense_screen.dart';
 import '../widgets/main_shell.dart';
+import 'package:flutter/widgets.dart'; // for WidgetsBinding
 
 class _RouterNotifier extends ChangeNotifier {
   final Ref _ref;
   bool _previousIsLoggedIn = false;
+  bool _navigationScheduled = false; // guard against double-fire
 
   _RouterNotifier(this._ref) {
-    _previousIsLoggedIn = _ref.read(authNotifierProvider).valueOrNull != null;
+    _previousIsLoggedIn =
+        _ref.read(authNotifierProvider).valueOrNull != null;
 
     _ref.listen<AsyncValue<UserModel?>>(authNotifierProvider, (prev, next) {
-      final wasLoading = prev?.isLoading ?? false;
-      final nextLoggedIn = next.valueOrNull != null;
-
       if (next.isLoading) return;
+
+      final nextLoggedIn = next.valueOrNull != null;
+      final wasLoading = prev?.isLoading ?? false;
+
       if (nextLoggedIn == _previousIsLoggedIn && !wasLoading) return;
 
       _previousIsLoggedIn = nextLoggedIn;
-      notifyListeners(); // fires exactly ONCE per actual login/logout
+
+      // FIX: Prevent duplicate notifyListeners calls in the same frame
+      if (_navigationScheduled) return;
+      _navigationScheduled = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigationScheduled = false;
+        notifyListeners();
+      });
     });
   }
 
-  bool get isLoggedIn => _ref.read(authNotifierProvider).valueOrNull != null;
+  bool get isLoggedIn =>
+      _ref.read(authNotifierProvider).valueOrNull != null;
 }
 
 final _routerNotifierProvider = Provider<_RouterNotifier>((ref) {

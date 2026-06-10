@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
-
+import 'dart:async';
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 final adminDashboardProvider = FutureProvider<AdminDashboardData>((ref) async {
   final dio = ref.read(dioProvider);
@@ -24,12 +24,15 @@ final membersListProvider = FutureProvider<List<MemberModel>>(
   },
 );
 
-final memberDetailProvider = FutureProvider.autoDispose.family<MemberModel, String>((ref, id) async {
+final memberDetailProvider = FutureProvider.family<MemberModel, String>((ref, id) async {
+  // Keep alive for 5 minutes so back-navigation doesn't re-fetch
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 5), link.close);
+  
   final dio = ref.read(dioProvider);
   final res = await dio.safeGet('/members/$id');
   return MemberModel.fromJson(res['data']);
 });
-
 // ─── Ledger ────────────────────────────────────────────────────────────────────
 class LedgerParams {
   final String memberId;

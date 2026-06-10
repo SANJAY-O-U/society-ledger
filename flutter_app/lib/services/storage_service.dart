@@ -45,9 +45,34 @@ class StorageService {
   }
 
   static bool get isLoggedIn {
-    return getUser() != null;
+  final user = getUser();
+  if (user == null) return false;
+  // Also verify we have a valid access token
+  final token = _prefs.getString('access_token_check');
+  // Access token is stored in secure storage (async) so we
+  // just check user data existence here — the API interceptor
+  // handles actual token refresh on 401
+  return true;
+}
+   static Future<bool> get isSessionValid async {
+  final user = getUser();
+  if (user == null) return false;
+  final token = await getAccessToken();
+  return token != null;
+}
+static Future<bool> get hasValidSession async {
+  final user = getUser();          // sync — from SharedPreferences
+  if (user == null) return false;
+  
+  final token = await getAccessToken();  // async — from SecureStorage
+  if (token == null) {
+    // Token is missing but user data exists — inconsistent state.
+    // Clear everything so app starts fresh.
+    await clearAll();
+    return false;
   }
-
+  return true;
+}
   // ─── Theme / Preferences ──────────────────────────────────────────────────
   static Future<void> setDarkMode(bool value) async {
     await _prefs.setBool('dark_mode', value);

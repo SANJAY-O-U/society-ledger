@@ -71,22 +71,27 @@ void _loadFromStorage() {
   }
 
   Future<void> logout() async {
-    try {
-      final fcmToken = StorageService.getFCMToken();
-      await _dio.safePost('/auth/logout', data: {'fcmToken': fcmToken});
-    } catch (_) {}
-    await StorageService.clearAll();
-    state = const AsyncValue.data(null);
+  // Step 1: Notify server (best effort — don't fail if server unreachable)
+  try {
+    final fcmToken = StorageService.getFCMToken();
+    await _dio.safePost('/auth/logout',
+        data: {'fcmToken': fcmToken}).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => {},
+    );
+  } catch (_) {
+    // Server logout failure is non-critical — proceed with local cleanup
   }
 
-  Future<void> refreshUser() async {
-    try {
-      final res = await _dio.safeGet('/auth/me');
-      final user = UserModel.fromJson(res['user']);
-      await StorageService.saveUser(res['user']);
-      state = AsyncValue.data(user);
-    } catch (_) {}
+  // Step 2: Clear ALL local storage FIRST
+  await StorageService.clearAll();
+
+  // Step 3: Update state LAST — this triggers _RouterNotifier listener
+  // which will call notifyListeners() → GoRouter redirect → /auth/login
+  if (mounted) {
+    state = const AsyncValue.data(null);
   }
+}
 
   Future<void> _saveAuth(Map<String, dynamic> res) async {
     await StorageService.saveAccessToken(res['accessToken']);

@@ -414,10 +414,182 @@ class MemberDetailScreen extends ConsumerWidget {
   }
 }
 
-class AddMemberScreen extends StatelessWidget {
+// REPLACE the entire AddMemberScreen class:
+class AddMemberScreen extends ConsumerStatefulWidget {
   const AddMemberScreen({super.key});
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('Add Member')), body: const Center(child: Text('Add Member Form')));
+  ConsumerState<AddMemberScreen> createState() => _AddMemberScreenState();
+}
+
+class _AddMemberScreenState extends ConsumerState<AddMemberScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _flatCtrl = TextEditingController();
+  final _wingCtrl = TextEditingController();
+  final _areaCtrl = TextEditingController();
+  final _maintenanceCtrl = TextEditingController();
+  String _ownershipType = 'owner';
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose(); _phoneCtrl.dispose(); _emailCtrl.dispose();
+    _passwordCtrl.dispose(); _flatCtrl.dispose(); _wingCtrl.dispose();
+    _areaCtrl.dispose(); _maintenanceCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      final dio = ref.read(dioProvider);
+
+      // Step 1: Create user account
+      final userRes = await dio.safePost('/auth/register', data: {
+        'name': _nameCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'email': _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+        'password': _passwordCtrl.text,
+        'role': 'member',
+      });
+      final userId = userRes['user']['_id'];
+
+      // Step 2: Create member profile linked to user
+      await dio.safePost('/members', data: {
+        'userId': userId,
+        'flatNumber': _flatCtrl.text.trim().toUpperCase(),
+        'wing': _wingCtrl.text.trim().toUpperCase(),
+        'flatArea': double.tryParse(_areaCtrl.text) ?? 0,
+        'ownershipType': _ownershipType,
+        'monthlyMaintenance': double.tryParse(_maintenanceCtrl.text) ?? 0,
+        'maintenanceDueDay': 10,
+      });
+
+      // Refresh members list
+      ref.refresh(membersListProvider.future);
+      if (mounted) {
+        AppSnackbar.showSuccess(context, 'Member added successfully!');
+        context.pop();
+      }
+    } catch (e) {
+      AppSnackbar.showError(context, e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.surfaceLight,
+      appBar: AppBar(title: const Text('Add Member')),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Personal Details',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppTheme.textSecondary)),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _nameCtrl,
+                decoration: const InputDecoration(labelText: 'Full Name *', prefixIcon: Icon(Icons.person_outline)),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'Mobile Number *', prefixText: '+91  ', prefixIcon: Icon(Icons.phone_outlined)),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Required';
+                  if (v.length != 10) return 'Enter 10-digit number';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'Email (optional)', prefixIcon: Icon(Icons.email_outlined)),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordCtrl,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password *',
+                  prefixIcon: const Icon(Icons.lock_outlined),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+                validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
+              ),
+              const SizedBox(height: 20),
+              const Text('Flat Details',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppTheme.textSecondary)),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: TextFormField(
+                  controller: _wingCtrl,
+                  decoration: const InputDecoration(labelText: 'Wing *'),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                  textCapitalization: TextCapitalization.characters,
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: TextFormField(
+                  controller: _flatCtrl,
+                  decoration: const InputDecoration(labelText: 'Flat No *'),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                )),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: TextFormField(
+                  controller: _areaCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Area (sq.ft) *', suffixText: 'sq.ft'),
+                  validator: (v) => (v == null || double.tryParse(v) == null) ? 'Invalid' : null,
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: TextFormField(
+                  controller: _maintenanceCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Monthly ₹ *', prefixText: '₹ '),
+                  validator: (v) => (v == null || double.tryParse(v) == null) ? 'Invalid' : null,
+                )),
+              ]),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _ownershipType,
+                decoration: const InputDecoration(labelText: 'Ownership Type'),
+                items: ['owner', 'tenant', 'caretaker']
+                    .map((o) => DropdownMenuItem(value: o, child: Text(o.toUpperCase())))
+                    .toList(),
+                onChanged: (v) => setState(() => _ownershipType = v!),
+              ),
+              const SizedBox(height: 24),
+              AppButton(
+                label: 'Add Member',
+                onPressed: _isLoading ? null : _submit,
+                isLoading: _isLoading,
+                icon: Icons.person_add_outlined,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Expenses Screen ──────────────────────────────────────────────────────────

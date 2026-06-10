@@ -528,30 +528,47 @@ class _CreateComplaintScreenState extends ConsumerState<CreateComplaintScreen> {
     setState(() => _images = images.take(5).toList());
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
-    try {
-      final dio = ref.read(dioProvider);
-      final formData = FormData.fromMap({
-        'title': _titleCtrl.text.trim(),
-        'description': _descCtrl.text.trim(),
-        'category': _category,
-        'priority': _priority,
-        ..._images.asMap().map((i, f) => MapEntry(
-            'images', MultipartFile.fromFileSync(f.path, filename: f.name))),
-      });
+// REPLACE entire _submit method:
+Future<void> _submit() async {
+  if (!_formKey.currentState!.validate()) return;
+  setState(() => _isLoading = true);
+  try {
+    final dio = ref.read(dioProvider);
 
-      await dio.post('/complaints', data: formData);
-      ref.refresh(complaintsProvider(''));
-      AppSnackbar.showSuccess(context, 'Complaint submitted successfully');
-      context.pop();
-    } catch (e) {
-      AppSnackbar.showError(context, e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    // Build multipart form data
+    final fields = <String, dynamic>{
+      'title': _titleCtrl.text.trim(),
+      'description': _descCtrl.text.trim(),
+      'category': _category,
+      'priority': _priority,
+    };
+
+    // FIX: correct image list building — previous code had MapEntry bug
+    final imageFiles = <MultipartFile>[];
+    for (final f in _images) {
+      imageFiles.add(await MultipartFile.fromFile(f.path, filename: f.name));
     }
+
+    final formData = FormData.fromMap({
+      ...fields,
+      if (imageFiles.isNotEmpty) 'images': imageFiles,
+    });
+
+    // FIX: use dio.post directly for multipart (safePost wraps the same call)
+    final response = await dio.post('/complaints', data: formData);
+    if (response.data['success'] == true) {
+      ref.refresh(complaintsProvider(''));
+      if (mounted) {
+        AppSnackbar.showSuccess(context, 'Complaint submitted successfully');
+        context.pop();
+      }
+    }
+  } catch (e) {
+    if (mounted) AppSnackbar.showError(context, e.toString());
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {

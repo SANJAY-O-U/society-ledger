@@ -4,6 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:async';
 import '../../config/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
@@ -23,13 +26,19 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   String _search = '';
   String? _category;
   String? _status;
-
+  Timer? _debounce;
+  String _debouncedSearch = '';
+  String get _filterKey => 'search:$_debouncedSearch|category:${_category ?? ''}|status:${_status ?? ''}';
   Map<String, dynamic> get _params => {
     if (_search.isNotEmpty) 'search': _search,
     if (_category != null) 'category': _category,
     if (_status != null) 'status': _status,
   };
-
+  @override
+void dispose() {
+  _debounce?.cancel();
+  super.dispose();
+}
   @override
   Widget build(BuildContext context) {
     final inventoryAsync = ref.watch(inventoryProvider);
@@ -55,7 +64,15 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             child: Column(
               children: [
                 TextField(
-                  onChanged: (v) => setState(() => _search = v),
+                  onChanged: (v) {
+  _debounce?.cancel();
+  _debounce = Timer(const Duration(milliseconds: 400), () {
+    if (mounted) setState(() {
+      _search = v;
+      _debouncedSearch = v;
+    });
+  });
+},
                   decoration: InputDecoration(
                     hintText: 'Search inventory...',
                     prefixIcon: const Icon(Icons.search),
@@ -438,7 +455,10 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Profile'),
         actions: [
-          IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () {}),
+          IconButton(
+  icon: const Icon(Icons.upload_file_outlined),
+  onPressed: () => _showUploadDialog(context, ref),
+),
         ],
       ),
       body: SingleChildScrollView(
@@ -550,7 +570,7 @@ class ProfileScreen extends ConsumerWidget {
                       );
                      if (confirm == true) {
                         await ref.read(authNotifierProvider.notifier).logout();
-                        if (context.mounted) context.go('/auth/login');
+                        
                      }
                     },
                   ),
@@ -563,6 +583,90 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+  void _showUploadDialog(BuildContext context, WidgetRef ref) {
+  final titleCtrl = TextEditingController();
+  String category = 'notice';
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: const Text('Upload Document'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleCtrl,
+              decoration: const InputDecoration(labelText: 'Document Title *'),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: category,
+              decoration: const InputDecoration(labelText: 'Category'),
+              items: ['notice', 'agm', 'circular', 'bill', 'policy', 'financial', 'other']
+                  .map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase())))
+                  .toList(),
+              onChanged: (v) => setState(() => category = v!),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (titleCtrl.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Title is required')));
+                return;
+              }
+              Navigator.pop(ctx);
+              await _pickAndUploadFile(context, ref, titleCtrl.text.trim(), category);
+            },
+            child: const Text('Pick File'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<void> _pickAndUploadFile(
+    BuildContext context, WidgetRef ref, String title, String category) async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.first;
+    if (file.path == null) {
+      AppSnackbar.showError(context, 'Could not access file');
+      return;
+    }
+
+    final dio = ref.read(dioProvider);
+    final formData = FormData.fromMap({
+      'title': title,
+      'category': category,
+      'notify': 'true',
+      'file': await MultipartFile.fromFile(
+        file.path!,
+        filename: file.name,
+      ),
+    });
+
+    await dio.post('/documents', data: formData);
+    ref.refresh(documentsProvider);
+    ref.refresh(documentsProvider);
+    AppSnackbar.showSuccess(context, 'Document uploaded successfully!');
+  } catch (e) {
+    AppSnackbar.showError(context, e.toString());
+  }
+}
 }
 
 class _ProfileMenuItem extends StatelessWidget {

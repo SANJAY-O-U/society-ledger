@@ -21,14 +21,21 @@ void initState() {
   );
   _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
   _controller.forward();
+
+  // FIX: Use Future.delayed then call async _navigate
   Future.delayed(const Duration(milliseconds: 800), _navigate);
 }
 
-  void _navigate() {
-    if (!mounted) return;
-    final isLoggedIn = StorageService.isLoggedIn;
-    context.go(isLoggedIn ? '/home' : '/auth/login');
-  }
+// FIX: Async navigate that validates BOTH token AND user data
+Future<void> _navigate() async {
+  if (!mounted) return;
+  
+  final isValid = await StorageService.hasValidSession;
+  
+  if (!mounted) return;
+  context.go(isValid ? '/home' : '/auth/login');
+}
+
 
  @override
 void dispose() {
