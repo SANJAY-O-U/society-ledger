@@ -90,49 +90,59 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
-      GoRoute(path: '/auth/login', builder: (_, __) => const LoginScreen()),
-      GoRoute(
-        path: '/auth/otp',
-        builder: (_, state) => OtpScreen(phone: state.extra as String),
-      ),
-      ShellRoute(
-        builder: (context, state, child) => MainShell(child: child),
-        routes: [
-          GoRoute(path: '/home', builder: (_, __) => const DashboardScreen()),
-          GoRoute(path: '/ledger', builder: (_, __) => const LedgerScreen()),
-          GoRoute(path: '/payments', builder: (_, __) => const PaymentScreen()),
-          GoRoute(path: '/complaints', builder: (_, __) => const ComplaintsScreen()),
-          GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
-        ],
-      ),
-      GoRoute(
-        path: '/ledger/transaction/:id',
-        builder: (_, state) => TransactionDetailScreen(id: state.pathParameters['id']!),
-      ),
-      GoRoute(path: '/payments/history', builder: (_, __) => const PaymentHistoryScreen()),
-      GoRoute(
-        path: '/complaints/:id',
-        builder: (_, state) => ComplaintDetailScreen(id: state.pathParameters['id']!),
-      ),
-      GoRoute(path: '/complaints/create', builder: (_, __) => const CreateComplaintScreen()),
-      GoRoute(path: '/events', builder: (_, __) => const EventsScreen()),
-      GoRoute(
-        path: '/events/:id',
-        builder: (_, state) => EventDetailScreen(id: state.pathParameters['id']!),
-      ),
-      GoRoute(path: '/inventory', builder: (_, __) => const InventoryScreen()),
-      GoRoute(path: '/documents', builder: (_, __) => const DocumentsScreen()),
-      GoRoute(path: '/profile/edit', builder: (_, __) => const EditProfileScreen()),
-      GoRoute(path: '/admin', builder: (_, __) => const AdminPanelScreen()),
-      GoRoute(path: '/admin/members', builder: (_, __) => const MembersScreen()),
-      GoRoute(
-        path: '/admin/members/:id',
-        builder: (_, state) => MemberDetailScreen(id: state.pathParameters['id']!),
-      ),
-      GoRoute(path: '/admin/members/add', builder: (_, __) => const AddMemberScreen()),
-      GoRoute(path: '/admin/expenses', builder: (_, __) => const ExpensesScreen()),
-      GoRoute(path: '/admin/expenses/add', builder: (_, __) => const AddExpenseScreen()),
+  GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
+  GoRoute(path: '/auth/login', builder: (_, __) => const LoginScreen()),
+  GoRoute(
+    path: '/auth/otp',
+    builder: (_, state) => OtpScreen(phone: state.extra as String),
+  ),
+
+  ShellRoute(
+    builder: (context, state, child) => MainShell(child: child),
+    routes: [
+      GoRoute(path: '/home', builder: (_, __) => const DashboardScreen()),
+      GoRoute(path: '/ledger', builder: (_, __) => const LedgerScreen()),
+      GoRoute(path: '/payments', builder: (_, __) => const PaymentScreen()),
+      GoRoute(path: '/complaints', builder: (_, __) => const ComplaintsScreen()),
+      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
     ],
+  ),
+
+  GoRoute(
+    path: '/ledger/transaction/:id',
+    builder: (_, state) => TransactionDetailScreen(id: state.pathParameters['id']!),
+  ),
+  GoRoute(path: '/payments/history', builder: (_, __) => const PaymentHistoryScreen()),
+
+  // FIX: '/complaints/create' MUST come before '/complaints/:id'
+  GoRoute(path: '/complaints/create', builder: (_, __) =>const CreateComplaintScreen()),
+  GoRoute(
+    path: '/complaints/:id',
+    builder: (_, state) => ComplaintDetailScreen(id: state.pathParameters['id']!),
+  ),
+
+  GoRoute(path: '/events', builder: (_, __) => const EventsScreen()),
+  GoRoute(
+    path: '/events/:id',
+    builder: (_, state) => EventDetailScreen(id: state.pathParameters['id']!),
+  ),
+
+  GoRoute(path: '/inventory', builder: (_, __) => const InventoryScreen()),
+  GoRoute(path: '/documents', builder: (_, __) => const DocumentsScreen()),
+  GoRoute(path: '/profile/edit', builder: (_, __) => const EditProfileScreen()),
+
+  GoRoute(path: '/admin', builder: (_, __) => const AdminPanelScreen()),
+
+  // FIX: '/admin/members/add' MUST come before '/admin/members/:id'
+  GoRoute(path: '/admin/members/add', builder: (_, __) => const AddMemberScreen()),
+  GoRoute(path: '/admin/members', builder: (_, __) => const MembersScreen()),
+  GoRoute(
+    path: '/admin/members/:id',
+    builder: (_, state) => MemberDetailScreen(id: state.pathParameters['id']!),
+  ),
+
+  GoRoute(path: '/admin/expenses', builder: (_, __) => const ExpensesScreen()),
+  GoRoute(path: '/admin/expenses/add', builder: (_, __) => const AddExpenseScreen()),
+],
   );
 });

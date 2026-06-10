@@ -270,7 +270,7 @@ class _MemberDashboard extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text('Flat ${data['data']?['member']?['wing']}-${data['data']?['member']?['flatNumber']}',
                           style: TextStyle(color: Colors.white.withOpacity(0.8))),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 4),
                       Row(children: [
                         _HeaderStat(
                           label: 'Pending Dues',
